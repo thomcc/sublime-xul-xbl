@@ -1,0 +1,475 @@
+%YAML 1.2
+---
+# http://www.sublimetext.com/docs/3/syntax.html
+name: XUL or XBL
+file_extensions:
+  - xul
+  - xml
+scope: source.xml.xul
+variables:
+  name: '[[:alpha:]:_][[:alnum:]:_.-]*'
+  qualified_name: '(?:([[:alpha:]_][[:alnum:]_.-]*)(:))?([[:alpha:]_][[:alnum:]_.-]*)'
+  js_ident: '[_$a-zA-Z][$\w]*'
+contexts:
+  main:
+    - match: (<\?)(xml-stylesheet|xul-overlay|xml(?!-))
+      captures:
+        1: punctuation.definition.tag.begin.xml.xul
+        2: entity.name.tag.xml.xul
+      push:
+        - meta_scope: meta.tag.preprocessor.xml.xul
+        - match: (\?>)
+          captures:
+            1: punctuation.definition.tag.end.xml.xul
+            2: entity.name.tag.xml.xul
+          pop: true
+        - include: tag-generic-attribute
+        - include: string-double-quoted
+        - include: string-single-quoted
+    - match: '(<!)(DOCTYPE)(?:\s+({{name}}))?'
+      captures:
+        1: punctuation.definition.tag.begin.xml
+        2: keyword.doctype.xml
+        3: variable.documentroot.xml
+      push:
+        - meta_scope: meta.tag.sgml.doctype.xml
+        - match: \s*(>)
+          captures:
+            1: punctuation.definition.tag.end.xml
+          pop: true
+        - include: internal-subset
+    - include: comment
+    - include: script-tag
+    - include: xbl-tags
+    - include: generic-tag
+    - include: entities
+    - include: preprocessor
+
+  xbl-tags:
+    - match: '(?:^\s+)?(<)([gs]etter|body|(?:con|de)structor|handler)\b'
+      captures:
+        1: punctuation.definition.tag.begin.xml.xul
+        2: entity.name.tag.localname.xml
+      push:
+        - match: (?:(</)((?:\2))(>)(?:\s*\n)?|(/>))
+          captures:
+            1: punctuation.definition.tag.begin.xml.xul
+            2: entity.name.tag.xml.xul
+            3: punctuation.definition.tag.end.xml.xul
+            4: punctuation.definition.tag.end.xml.xul
+          pop: true
+        - include: readonly-attribute
+        - include: tag-stuff
+        - match: (>)
+          captures:
+            1: punctuation.definition.tag.end.xml.xul
+          push:
+            - match: (?=</(?:\2))
+              pop: true
+            - include: js-in-tag
+    - match: '(?:^\s+)?(<)(field)\b'
+      captures:
+        1: punctuation.definition.tag.begin.xml.xul
+        2: entity.name.tag.xml.xul
+      push:
+        - match: '(?:\s+|^)(name)\s*(=)\s*(")(?:({{js_ident}})|([^"]*?))(")'
+          captures:
+            1: entity.other.attribute-name.localname.xml.xul
+            2: punctuation.separator.key-value.xml.xul
+            3: punctuation.definition.string.begin.xml.xul
+            4: variable.other.member.xml.xul
+            5: invalid.illegal
+            6: punctuation.definition.string.end.xml.xul
+        - match: (?:(</)(field)(>)(?:\s*\n)?|(/>))
+          captures:
+            1: punctuation.definition.tag.begin.xml.xul
+            2: entity.name.tag.xml.xul
+            3: punctuation.definition.tag.end.xml.xul
+            4: punctuation.definition.tag.end.xml.xul
+          pop: true
+        - include: readonly-attribute
+        - include: tag-stuff
+        - match: (>)
+          captures:
+            1: punctuation.definition.tag.xml.xul
+          set:
+            # - meta_scope: meta.embedded.script.xml.xul
+            - match: (?=</field)
+              pop: true
+            - include: js-in-tag
+    - match: (<)\s*(method)\b
+      captures:
+        1: punctuation.definition.tag.begin.xml.xul
+        2: entity.name.tag.localname.xml
+      push:
+        - match: '(/?>)'
+          captures:
+            1: punctuation.definition.tag.end.xml.xul
+          pop: true
+        - match: '(?:\s+|^)(name)\s*(=)\s*(")(?:({{js_ident}})|([^"]*?))(")'
+          captures:
+            1: entity.other.attribute-name.localname.xml.xul
+            2: punctuation.separator.key-value.xml.xul
+            3: punctuation.definition.string.begin.xml.xul
+            4: entity.name.function.xml.xul
+            5: invalid.illegal
+            6: punctuation.definition.string.end.xml.xul
+        - include: readonly-attribute
+        - include: tag-stuff
+    - match: (<)\s*(parameter)\b
+      captures:
+        1: punctuation.definition.tag.begin.xml.xul
+        2: entity.name.tag.localname.xml
+      push:
+        - match: '(/?>)'
+          captures: punctuation.definition.tag.end.xml.xul
+          pop: true
+        - match: '(?:\s+|^)(name)\s*(=)\s*(")(?:({{js_ident}})|([^"]*?))(")'
+          captures:
+            1: entity.other.attribute-name.localname.xml.xul
+            2: punctuation.separator.key-value.xml.xul
+            3: punctuation.definition.string.begin.xml.xul
+            4: variable.parameter.xml.xul
+            5: invalid.illegal
+            6: punctuation.definition.string.end.xml.xul
+        - include: tag-stuff
+    - match: (<)\s*(property)\b
+      captures:
+        1: punctuation.definition.tag.begin.xml.xul
+        2: entity.name.tag.localname.xml
+      push:
+        - match: '(/?>)'
+          captures:
+            1: punctuation.definition.tag.end.xml.xul
+          pop: true
+        - match: '(?:\s+|^)(name)\s*(=)\s*(")(?:({{js_ident}})|([^"]*?))(")'
+          captures:
+            1: entity.other.attribute-name.localname.xml.xul
+            2: punctuation.separator.key-value.xml.xul
+            3: punctuation.definition.string.begin.xml.xul
+            4: entity.name.accessor.xml.xul
+            5: invalid.illegal
+            6: punctuation.definition.string.end.xml.xul
+        - include: readonly-attribute
+        - include: tag-stuff
+    - match: (<)\s*(implementation)\b
+      captures:
+        1: punctuation.definition.tag.begin.xml.xul
+        2: entity.name.tag.localname.xml
+      push:
+        - match: '(/?>)'
+          captures:
+            1: punctuation.definition.tag.end.xml.xul
+          pop: true
+        - match: '(?:\s+|^)(implements)\s*(=)\s*(")'
+          captures:
+            1: entity.other.attribute-name.localname.xml.xul
+            2: punctuation.separator.key-value.xml.xul
+            3: punctuation.definition.string.begin.xml.xul
+          push:
+            - match: '(")'
+              captures:
+                1: punctuation.definition.string.end.xml.xul
+              pop: true
+            - match: \b({{js_ident}})\b
+              captures:
+                1: support.class.xml.xul
+            - match: '(,)'
+              captures:
+                1: punctuation.separator.xml.xul
+        - include: tag-stuff
+
+  script-tag:
+    - match: '(?:^\s+)?(<)((?:script))'
+      captures:
+        1: punctuation.definition.tag.xml.xul
+        2: entity.name.tag.script.xml.xul
+      push:
+        - meta_scope: meta.embedded.script.xml.xul
+        - include: tag-stuff
+        - match: "(/>)"
+          captures:
+            1: punctuation.definition.tag.end.xml.xul
+          pop: true
+        - match: (?<=</(script))(>)(?:\s*\n)?
+          captures:
+            1: entity.name.tag.script.xml.xul
+            2: punctuation.definition.tag.end.xml.xul
+          pop: true
+        - match: (?<!</(?:script))(>)
+          captures:
+            1: punctuation.definition.tag.end.xml.xul
+            2: entity.name.tag.script.xml.xul
+          push:
+            - match: (</)((?:script))
+              captures:
+                1: punctuation.definition.tag.xml.xul
+                2: entity.name.tag.script.xml.xul
+              pop: true
+            - match: (//).*?((?=</script)|$\n?)
+              scope: comment.line.double-slash.js.xul
+              captures:
+                1: punctuation.definition.comment.js.xul
+            - match: /\*
+              captures:
+                0: punctuation.definition.comment.js.xul
+              push:
+                - meta_scope: comment.block.js.xul
+                - match: \*/|(?=</script)
+                  captures:
+                    0: punctuation.definition.comment.js.xul
+                  pop: true
+            - include: scope:source.js
+
+  generic-tag:
+    - match: '(</?){{qualified_name}}([^/>\s]*)'
+      captures:
+        1: punctuation.definition.tag.begin.xml.xul
+        2: entity.name.tag.namespace.xml.xul
+        3: entity.name.tag.xml.xul punctuation.separator.namespace.xml.xul
+        4: entity.name.tag.localname.xml.xul
+        5: invalid.illegal.bad-tag-name.xml.xul
+      push:
+        - meta_scope: meta.tag.xml.xul
+        - match: /?>
+          scope: punctuation.definition.tag.end.xml.xul
+          pop: true
+        - include: tag-stuff
+
+  preprocessor:
+    - match: ^(#include)\b
+      scope: meta.preprocessor.include.xml.xul keyword.control.import.xml.xul
+      push:
+        - meta_scope: meta.preprocessor.include.xml.xul
+        - match: '\S'
+          scope: punctuation.definition.string.begin.xml.xul
+        - match: '\n'
+          scope: punctuation.definition.string.end.xml.xul
+          pop: true
+    - match: '^#\s'
+      scope: punctuation.definition.comment.xml.xul
+      push:
+        - meta_scope: comment.line.preprocessor.xml.xul
+        - match: \n
+          pop: true
+    - match: ^#(if|ifn?def|else|endif)\b
+      scope: meta.preprocessor.conditional.xml.xul keyword.control.import.xml.xul
+      push:
+        - match: '\n'
+          scope: punctuation.definition.string.end.xml.xul
+          pop: true
+    - match: ^#(define|undef)\b
+      scope: meta.preprocessor.define.xml.xul keyword.control.import.xml.xul
+      push:
+        - match: '\n'
+          scope: punctuation.definition.string.end.xml.xul
+          pop: true
+
+  comment:
+    - match: <!--
+      captures:
+        0: punctuation.definition.comment.xml.xul
+      push:
+        - meta_scope: comment.block.xml.xul
+        - match: '--\s*>'
+          captures:
+            0: punctuation.definition.comment.xml.xul
+          pop: true
+        - match: "--"
+          scope: invalid.illegal.bad-comments-or-CDATA.xml.xul
+
+  internal-subset:
+    - match: \[
+      scope: punctuation.definition.constant.xml.xul
+      push:
+        - meta_scope: meta.internalsubset.xml.xul
+        - match: \]
+          scope: punctuation.definition.constant.xml.xul
+          pop: true
+        - include: comment
+        - include: entity-decl
+        - include: element-decl
+        - include: attlist-decl
+        - include: notation-decl
+        - include: parameter-entity
+
+  entity-decl:
+    - match: '(<!)(ENTITY)\s+(%\s+)?({{name}})(\s+(?:SYSTEM|PUBLIC)\s+)?'
+      captures:
+        1: punctuation.definition.tag.begin.xml.xul
+        2: keyword.entity.xml.xul
+        3: punctuation.definition.entity.xml.xul
+        4: variable.entity.xml.xul
+        5: keyword.entitytype.xml.xul
+      push:
+        - match: '>'
+          scope: punctuation.definition.tag.end.xml.xul
+          pop: true
+        - include: string-double-quoted
+        - include: string-single-quoted
+
+  element-decl:
+    - match: '(<!)(ELEMENT)\s+({{name}})\s+'
+      captures:
+        1: punctuation.definition.tag.begin.xml.xul
+        2: keyword.element.xml.xul
+        3: variable.element.xml.xul
+      push:
+        - match: '>'
+          scope: punctuation.definition.tag.end.xml.xul
+          pop: true
+        - match: '\b(EMPTY|ANY)\b'
+          scope: constant.other.xml.xul
+        - include: element-parens
+
+  element-parens:
+    - match: \(
+      scope: punctuation.definition.group.xml.xul
+      push:
+        - match: (\))([*?+])?
+          captures:
+            1: punctuation.definition.group.xml.xul
+            2: keyword.operator.xml.xul
+          pop: true
+        - match: '#PCDATA'
+          scope: constant.other.xml.xul
+        - match: '[*?+]'
+          scope: keyword.operator.xml.xul
+        - match: '[,|]'
+          scope: punctuation.separator.xml.xul
+        - include: element-parens
+
+  attlist-decl:
+    - match: '(<!)(ATTLIST)\s+({{name}})\s+({{name}})'
+      captures:
+        1: punctuation.definition.tag.begin.xml.xul
+        2: keyword.attlist.xml.xul
+        3: variable.element.xml.xul
+        4: variable.attribute-name.xml.xul
+      push:
+        - match: '>'
+          scope: punctuation.definition.tag.end.xml.xul
+          pop: true
+        - include: string-double-quoted
+        - include: string-single-quoted
+
+  notation-decl:
+    - match: '(<!)(NOTATION)\s+({{name}})'
+      captures:
+        1: punctuation.definition.tag.begin.xml.xul
+        2: keyword.notation.xml.xul
+        3: variable.notation.xml.xul
+      push:
+        - match: '>'
+          scope: punctuation.definition.tag.end.xml.xul
+          pop: true
+        - include: string-double-quoted
+        - include: string-single-quoted
+
+  parameter-entity:
+    - match: '(%){{name}}(;)'
+      scope: constant.character.parameter-entity.xml.xul
+      captures:
+        1: punctuation.definition.constant.xml.xul
+        2: punctuation.definition.constant.xml.xul
+
+  readonly-attribute:
+    - match: '(?:\s+|^)(readonly)\s*(=)\s*(")(?:(true|false)|([^"]*?))(")'
+      captures:
+        1: entity.other.attribute-name.localname.xml.xul
+        2: punctuation.separator.key-value.xml.xul
+        3: punctuation.definition.string.begin.xml.xul
+        4: constant.language.xml.xul
+        5: invalid.illegal
+        6: punctuation.definition.string.end.xml.xul
+
+  entities:
+    - match: "(&)([a-zA-Z0-9.]+|#[0-9]+|#x[0-9a-fA-F]+)(;)"
+      scope: constant.character.entity.xml.xul
+      captures:
+        1: punctuation.definition.entity.xml.xul
+        3: punctuation.definition.entity.xml.xul
+
+  entity:
+    - match: "(&)([:a-zA-Z_][:a-zA-Z0-9_.-]*|#[0-9]+|#x[0-9a-fA-F]+)(;)"
+      scope: constant.character.entity.xml.xul
+      captures:
+        1: punctuation.definition.constant.xml.xul
+        3: punctuation.definition.constant.xml.xul
+
+  js-in-tag:
+    - meta_scope: meta.embedded.script.xml.xul
+    - match: '<!\[CDATA\['
+      scope: comment.other.xml.xul
+    - match: '\]\]>'
+      scope: comment.other.xml.xul
+    - include: comment
+    # - match: <!--
+    #   captures:
+    #     0: punctuation.definition.comment.xml.xul
+    #   push:
+    #     - meta_scope: comment.block.xml.xul
+    #     - match: "-->"
+    #       captures:
+    #         0: punctuation.definition.comment.xml.xul
+    #       pop: true
+    - include: scope:source.js
+
+  string-double-quoted:
+    - match: '"'
+      captures:
+        0: punctuation.definition.string.begin.xml.xul
+      push:
+        - meta_scope: string.quoted.double.xml.xul
+        - match: '"'
+          captures:
+            0: punctuation.definition.string.end.xml.xul
+          pop: true
+        - include: entities
+
+  string-single-quoted:
+    - match: "'"
+      captures:
+        0: punctuation.definition.string.begin.xml.xul
+      push:
+        - meta_scope: string.quoted.single.xml.xul
+        - match: "'"
+          captures:
+            0: punctuation.definition.string.end.xml.xul
+          pop: true
+        - include: entities
+
+  tag-generic-attribute:
+    - match: '(?:\s+|^){{qualified_name}}\s*(=)'
+      captures:
+        1: entity.other.attribute-name.namespace.xml.xul
+        2: entity.other.attribute-name.xml.xul punctuation.separator.namespace.xml.xul
+        3: entity.other.attribute-name.localname.xml.xul
+        4: punctuation.separator.key-value.xml.xul
+    - match: '(?:\s+|^)([[:alnum:]:_.-]+)\s*(=)'
+      captures:
+        1: invalid.illegal.bad-attribute-name.xml.xul
+        2: punctuation.separator.key-value.xml.xul
+
+  event-attributes:
+    - match: '(?:\s+|^)(?:([[:alpha:]_][[:alnum:]_.-]*)(:))?(on[[:alnum:]_.-]*)\s*(=)\s*(")'
+      captures:
+        1: entity.other.attribute-name.namespace.xml.xul
+        2: entity.other.attribute-name.xml.xul punctuation.separator.namespace.xml.xul
+        3: entity.other.attribute-name.localname.xml.xul
+        4: punctuation.separator.key-value.xml.xul
+        5: punctuation.definition.string.begin.xml.xul
+      push:
+        - meta_scope: meta.attribute.embed_script.xml.xul
+        - match: '"'
+          captures:
+            0: punctuation.definition.string.end.xml.xul
+          pop: true
+        - include: scope:source.js
+
+  tag-stuff:
+    - include: event-attributes
+    - include: tag-generic-attribute
+    - include: string-double-quoted
+    - include: string-single-quoted
+    - include: preprocessor
