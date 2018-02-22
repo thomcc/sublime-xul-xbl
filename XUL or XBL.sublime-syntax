@@ -5,7 +5,7 @@ name: XUL or XBL
 file_extensions:
   - xul
   - xml
-scope: source.xml.xul
+scope: text.xml.xul
 variables:
   name: '[[:alpha:]:_][[:alnum:]:_.-]*'
   qualified_name: '(?:([[:alpha:]_][[:alnum:]_.-]*)(:))?([[:alpha:]_][[:alnum:]_.-]*)'

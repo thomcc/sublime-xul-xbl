@@ -2,7 +2,7 @@
   // close tag
   { "keys": ["/"], "command": "close_tag", "args": { "insert_slash": true }, "context":
     [
-      { "key": "selector", "operator": "equal", "operand": "source.xml.xul - source.js - meta.embedded - string - comment", "match_all": true },
+      { "key": "selector", "operator": "equal", "operand": "text.xml.xul - source.js - meta.embedded - string - comment", "match_all": true },
       { "key": "preceding_text", "operator": "regex_match", "operand": ".*<$", "match_all": true },
       { "key": "setting.auto_close_tags" }
     ]
