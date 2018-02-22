@@ -49,7 +49,7 @@ contexts:
     - match: '(?:^\s+)?(<)([gs]etter|body|(?:con|de)structor|handler)\b'
       captures:
         1: punctuation.definition.tag.begin.xml.xul
-        2: entity.name.tag.localname.xml
+        2: entity.name.tag.localname.xml.xul
       push:
         - match: (?:(</)((?:\2))(>)(?:\s*\n)?|(/>))
           captures:
@@ -61,12 +61,12 @@ contexts:
         - include: readonly-attribute
         - include: tag-stuff
         - match: (>)
-          captures:
-            1: punctuation.definition.tag.end.xml.xul
-          push:
+          scope: punctuation.definition.tag.end.xml.xul
+          push: scope:source.js
+          with_prototype:
             - match: (?=</(?:\2))
               pop: true
-            - include: js-in-tag
+            - include: js-extra-comments
     - match: '(?:^\s+)?(<)(field)\b'
       captures:
         1: punctuation.definition.tag.begin.xml.xul
@@ -90,17 +90,17 @@ contexts:
         - include: readonly-attribute
         - include: tag-stuff
         - match: (>)
-          captures:
-            1: punctuation.definition.tag.xml.xul
-          set:
-            # - meta_scope: meta.embedded.script.xml.xul
+          scope: punctuation.definition.tag.end.xml.xul
+          push: scope:source.js
+          with_prototype:
             - match: (?=</field)
               pop: true
-            - include: js-in-tag
+            - include: js-extra-comments
+
     - match: (<)\s*(method)\b
       captures:
         1: punctuation.definition.tag.begin.xml.xul
-        2: entity.name.tag.localname.xml
+        2: entity.name.tag.localname.xml.xul
       push:
         - match: '(/?>)'
           captures:
@@ -119,7 +119,7 @@ contexts:
     - match: (<)\s*(parameter)\b
       captures:
         1: punctuation.definition.tag.begin.xml.xul
-        2: entity.name.tag.localname.xml
+        2: entity.name.tag.localname.xml.xul
       push:
         - match: '(/?>)'
           captures: punctuation.definition.tag.end.xml.xul
@@ -136,7 +136,7 @@ contexts:
     - match: (<)\s*(property)\b
       captures:
         1: punctuation.definition.tag.begin.xml.xul
-        2: entity.name.tag.localname.xml
+        2: entity.name.tag.localname.xml.xul
       push:
         - match: '(/?>)'
           captures:
@@ -155,7 +155,7 @@ contexts:
     - match: (<)\s*(implementation)\b
       captures:
         1: punctuation.definition.tag.begin.xml.xul
-        2: entity.name.tag.localname.xml
+        2: entity.name.tag.localname.xml.xul
       push:
         - match: '(/?>)'
           captures:
@@ -180,46 +180,26 @@ contexts:
         - include: tag-stuff
 
   script-tag:
-    - match: '(?:^\s+)?(<)((?:script))'
+    - match: '(?:^\s+)?(<)(script)\b'
       captures:
-        1: punctuation.definition.tag.xml.xul
-        2: entity.name.tag.script.xml.xul
+        1: punctuation.definition.tag.begin.xml.xul
+        2: entity.name.tag.localname.xml.xul
       push:
-        - meta_scope: meta.embedded.script.xml.xul
+        - match: (?:(</)(script)(>)(?:\s*\n)?|(/>))
+          captures:
+            1: punctuation.definition.tag.begin.xml.xul
+            2: entity.name.tag.xml.xul
+            3: punctuation.definition.tag.end.xml.xul
+            4: punctuation.definition.tag.end.xml.xul
+          pop: true
+        - include: readonly-attribute
         - include: tag-stuff
-        - match: "(/>)"
-          captures:
-            1: punctuation.definition.tag.end.xml.xul
-          pop: true
-        - match: (?<=</(script))(>)(?:\s*\n)?
-          captures:
-            1: entity.name.tag.script.xml.xul
-            2: punctuation.definition.tag.end.xml.xul
-          pop: true
-        - match: (?<!</(?:script))(>)
-          captures:
-            1: punctuation.definition.tag.end.xml.xul
-            2: entity.name.tag.script.xml.xul
-          push:
-            - match: (</)((?:script))
-              captures:
-                1: punctuation.definition.tag.xml.xul
-                2: entity.name.tag.script.xml.xul
+        - match: (>)
+          scope: punctuation.definition.tag.end.xml.xul
+          push: scope:source.js
+          with_prototype:
+            - match: (?=</script>)
               pop: true
-            - match: (//).*?((?=</script)|$\n?)
-              scope: comment.line.double-slash.js.xul
-              captures:
-                1: punctuation.definition.comment.js.xul
-            - match: /\*
-              captures:
-                0: punctuation.definition.comment.js.xul
-              push:
-                - meta_scope: comment.block.js.xul
-                - match: \*/|(?=</script)
-                  captures:
-                    0: punctuation.definition.comment.js.xul
-                  pop: true
-            - include: scope:source.js
 
   generic-tag:
     - match: '(</?){{qualified_name}}([^/>\s]*)'
@@ -397,23 +377,13 @@ contexts:
         1: punctuation.definition.constant.xml.xul
         3: punctuation.definition.constant.xml.xul
 
-  js-in-tag:
+  js-extra-comments:
     - meta_scope: meta.embedded.script.xml.xul
     - match: '<!\[CDATA\['
       scope: comment.other.xml.xul
     - match: '\]\]>'
       scope: comment.other.xml.xul
     - include: comment
-    # - match: <!--
-    #   captures:
-    #     0: punctuation.definition.comment.xml.xul
-    #   push:
-    #     - meta_scope: comment.block.xml.xul
-    #     - match: "-->"
-    #       captures:
-    #         0: punctuation.definition.comment.xml.xul
-    #       pop: true
-    - include: scope:source.js
 
   string-double-quoted:
     - match: '"'
