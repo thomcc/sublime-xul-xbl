@@ -49,12 +49,12 @@ contexts:
     - include: entity-decl
 
   xbl-tags:
-    - match: '(?:^\s+)?(<)([gs]etter|(?:con|de)structor|handler)\b'
+    - match: '(?:^\s+)?(<)\s*([gs]etter|(?:con|de)structor|handler)\b'
       captures:
         1: punctuation.definition.tag.begin.xml.xul
         2: entity.name.tag.localname.xml.xul
       push:
-        - match: (?:(</)((?:\2))(>)(?:\s*\n)?|(/>))
+        - match: (?:(</)\s*((?:\2))\s*(>)(?:\s*\n)?|(/>))
           captures:
             1: punctuation.definition.tag.begin.xml.xul
             2: entity.name.tag.xml.xul
@@ -67,10 +67,10 @@ contexts:
           scope: punctuation.definition.tag.end.xml.xul
           push: scope:source.js
           with_prototype:
-            - match: (?=</(?:\2))
+            - match: (?=</\s*(?:\2))
               pop: true
             - include: js-extra-comments
-    - match: '(?:^\s+)?(<)(field)\b'
+    - match: '(?:^\s+)?(<)\s*(field)\b'
       captures:
         1: punctuation.definition.tag.begin.xml.xul
         2: entity.name.tag.xml.xul
@@ -83,7 +83,7 @@ contexts:
             4: variable.other.member.xml.xul
             5: invalid.illegal
             6: punctuation.definition.string.end.xml.xul
-        - match: (?:(</)(field)(>)(?:\s*\n)?|(/>))
+        - match: (?:(</)\s*(field)\s*(>)(?:\s*\n)?|(/>))
           captures:
             1: punctuation.definition.tag.begin.xml.xul
             2: entity.name.tag.xml.xul
@@ -122,8 +122,8 @@ contexts:
         - match: '>'
           scope: punctuation.definition.tag.end.xml.xul
           set:
+            - include: main
             - include: xbl-body
-            - include: xbl-tags
             - match: (</)\s*(method)\s*(>)
               captures:
                 1: punctuation.definition.tag.begin.xml.xul
@@ -688,9 +688,19 @@ contexts:
             - match: '(?=")'
               pop: true
             - include: entities
+  action-attribute:
+    - match: '(?:\s+|^)(?:([[:alpha:]_][[:alnum:]_.-]*)(:))?(action)\s*(=)'
+      captures:
+        1: entity.other.attribute-name.namespace.xml.xul
+        2: entity.other.attribute-name.xml.xul punctuation.separator.namespace.xml.xul
+        3: entity.other.attribute-name.localname.xml.xul
+        4: punctuation.separator.key-value.xml.xul
+      push:
+        - include: inline-script-string
 
   xbl-special-attributes:
     - include: readonly-attribute
+    - include: action-attribute
 
   tag-generic-attribute:
     - match: '(?:\s+|^){{qualified_name}}\s*(=)'
