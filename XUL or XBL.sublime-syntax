@@ -509,11 +509,33 @@ contexts:
         2: punctuation.separator.key-value.xml.xul
         3: punctuation.definition.string.begin.xml.xul
       push:
-        - include: CSS.sublime-syntax#rule-list-body
-      with_prototype:
+        - meta_scope: meta.attribute-with-value.style.xml.xul
+        - meta_content_scope: source.css
         - match: '"'
-          scope: punctuation.definition.string.begin.xml.xul
+          scope: punctuation.definition.string.end.xml.xul
           pop: true
+        - match: ''
+          push:
+            - include: 'CSS.sublime-syntax#rule-list-body'
+          with_prototype:
+            - match: '(?=")'
+              pop: true
+            - include: entities
+
+  inline-script-string:
+    - match: '"'
+      scope: punctuation.definition.string.begin.xml.xul
+      set:
+        - meta_scope: meta.attribute-with-value.script.xml.xul
+        - match: '"'
+          scope: punctuation.definition.string.end.xml.xul
+          pop: true
+        - match: ''
+          push: scope:source.js
+          with_prototype:
+            - match: '(?=")'
+              pop: true
+            - include: entities
 
   xbl-special-attributes:
     - include: readonly-attribute
@@ -531,20 +553,14 @@ contexts:
         2: punctuation.separator.key-value.xml.xul
 
   event-attributes:
-    - match: '(?:\s+|^)(?:([[:alpha:]_][[:alnum:]_.-]*)(:))?(on[[:alnum:]_.-]*)\s*(=)\s*(")'
+    - match: '(?:\s+|^)(?:([[:alpha:]_][[:alnum:]_.-]*)(:))?(on[[:alnum:]_.-]*)\s*(=)'
       captures:
         1: entity.other.attribute-name.namespace.xml.xul
         2: entity.other.attribute-name.xml.xul punctuation.separator.namespace.xml.xul
         3: entity.other.attribute-name.localname.xml.xul
         4: punctuation.separator.key-value.xml.xul
-        5: punctuation.definition.string.begin.xml.xul
       push:
-        - meta_scope: meta.attribute.embed_script.xml.xul
-        - match: '"'
-          captures:
-            0: punctuation.definition.string.end.xml.xul
-          pop: true
-        - include: scope:source.js
+        - include: inline-script-string
 
   tag-stuff:
     - include: xul-bool-attributes
