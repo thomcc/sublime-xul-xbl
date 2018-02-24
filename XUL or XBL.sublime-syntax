@@ -5,6 +5,7 @@ name: XUL or XBL
 file_extensions:
   - xul
   - xml
+  - dtd
 scope: text.xml.xul
 variables:
   name: '[[:alpha:]:_][[:alnum:]:_.-]*'
@@ -44,6 +45,8 @@ contexts:
     - include: generic-tag
     - include: entities
     - include: preprocessor
+    # Include entity-decl so that changing .dtd files to this syntax works well
+    - include: entity-decl
 
   xbl-tags:
     - match: '(?:^\s+)?(<)([gs]etter|body|(?:con|de)structor|handler)\b'
@@ -394,7 +397,7 @@ contexts:
         1: punctuation.definition.tag.begin.xml.xul
         2: keyword.entity.xml.xul
         3: punctuation.definition.entity.xml.xul
-        4: variable.entity.xml.xul
+        4: variable.entity.xml.xul entity.name.constant.xml.xul
         5: keyword.entitytype.xml.xul
       push:
         - match: '>'
