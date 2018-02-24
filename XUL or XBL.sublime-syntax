@@ -217,32 +217,147 @@ contexts:
         - include: tag-stuff
 
   preprocessor:
-    - match: ^(#include)\b
-      scope: meta.preprocessor.include.xml.xul keyword.control.import.xml.xul
+    - include: preprocessor-defines
+    - include: preprocessor-include
+    - include: preprocessor-conditionals
+    - include: preprocessor-comments
+    - include: preprocessor-filter
+    - include: preprocessor-other
+
+  preprocessor-include:
+    - match: '^(#include)\s+'
+      scope: meta.preprocessor.include.xml.xul
+      captures:
+        1: keyword.control.import.xml.xul
       push:
         - meta_scope: meta.preprocessor.include.xml.xul
-        - match: '\S'
-          scope: punctuation.definition.string.begin.xml.xul
+        - match: '\S+'
+          scope: string.unquoted.preprocessor.xml.xul
         - match: '\n'
-          scope: punctuation.definition.string.end.xml.xul
           pop: true
+    - match: '^(#includesubst)'
+      scope: meta.preprocessor.include.xml.xul
+      captures:
+        1: keyword.control.import.xml.xul
+      push:
+        - meta_scope: meta.preprocessor.include.xml.xul
+        - match: '(@)(\w+)(@)'
+          captures:
+            1: punctuation.definition.variable.xml.xul
+            2: variable.other.constant.preprocessor.xml.xul
+            3: punctuation.definition.variable.xml.xul
+        - match: '\n'
+          pop: true
+
+  preprocessor-comments:
     - match: '^#\s'
       scope: punctuation.definition.comment.xml.xul
       push:
         - meta_scope: comment.line.preprocessor.xml.xul
-        - match: \n
-          pop: true
-    - match: ^#(if|ifn?def|else|endif)\b
-      scope: meta.preprocessor.conditional.xml.xul keyword.control.import.xml.xul
-      push:
         - match: '\n'
-          scope: punctuation.definition.string.end.xml.xul
           pop: true
-    - match: ^#(define|undef)\b
-      scope: meta.preprocessor.define.xml.xul keyword.control.import.xml.xul
+
+  preprocessor-other:
+    - match: '^(#(?:expand|literal|error))\s+'
+      scope: meta.preprocessor.other.xml.xul
+      captures:
+        1: keyword.control.import.xml.xul
       push:
+        - meta_scope: comment.line.preprocessor.xml.xul
         - match: '\n'
-          scope: punctuation.definition.string.end.xml.xul
+          pop: true
+
+  preprocessor-expect-var-then-eol:
+    - match: '\n'
+      pop: true
+    - match: '\w+'
+      scope: variable.other.constant.preprocessor.xml.xul
+      set:
+        - match: '\n'
+          pop: true
+        - match: '\S'
+          scope: invalid.illegal.bad-variable.preprocessor.xml.xul
+    - match: '\W'
+      scope: invalid.illegal.bad-variable.preprocessor.xml.xul
+
+  preprocessor-conditionals:
+    - match: '^(#(?:ifn?def|elifn?def))\s+'
+      captures:
+        1: keyword.control.import.xml.xul
+      scope: meta.preprocessor.conditional.xml.xul
+      push:
+        - meta_scope: meta.preprocessor.xml.xul
+        - include: preprocessor-expect-var-then-eol
+    - match: '^(#(?:el)?if)\b'
+      captures:
+        1: keyword.control.import.xml.xul
+      scope: meta.preprocessor.conditional.xml.xul
+      push:
+        - meta_scope: meta.preprocessor.xml.xul
+        - include: preprocessor-expr
+        - match: '\n'
+          pop: true
+    - match: '^(#(?:else|endif))\b'
+      captures:
+        1: keyword.control.import.xml.xul
+      scope: meta.preprocessor.conditional.xml.xul
+      push:
+        - meta_scope: meta.preprocessor.xml.xul
+        - match: '\n'
+          pop: true
+        - match: \S+
+          scope: invalid.illegal.preprocessor.xml.xul
+
+  preprocessor-expr:
+    - match: \bdefined\b
+      scope: keyword.control.preprocessor.xml.xul
+    - match: '(&&|\|\||!)'
+      scope: keyword.operator.logical.preprocessor.xml.xul
+    - match: '\b[0-9]+\b'
+      scope: constant.numeric.preprocessor.xml.xul
+    - match: '\w+'
+      scope: variable.other.constant.preprocessor.xml.xul
+    - match: '\('
+      scope: punctuation.section.parens.begin.xml.xul
+      push:
+        - meta_scope: meta.parens.preprocessor.xml.xul
+        - match: '\n'
+          scope: invalid.illegal.unclosed-parens.xml.xul
+          pop: true
+        - match: '\)'
+          scope: punctuation.section.parens.end.xml.xul
+          pop: true
+        - include: preprocessor-expr
+
+  preprocessor-defines:
+    - match: '^(#define)\s+(\w+)\b'
+      captures:
+        1: keyword.control.import.xml.xul
+        2: entity.name.constant.preprocessor.xml.xul
+      scope: meta.preprocessor.define.xml.xul
+      push:
+        - meta_scope: meta.preprocessor.xml.xul
+        - match: '\n'
+          pop: true
+
+    - match: '^(#undef)\s+'
+      captures:
+        1: keyword.control.import.xml.xul
+      scope: meta.preprocessor.undef.xml.xul
+      push:
+        - meta_scope: meta.preprocessor.xml.xul
+        - include: preprocessor-expect-var-then-eol
+
+  preprocessor-filter:
+    - match: '^(#(?:un)?filter)\b'
+      captures:
+        1: keyword.control.import.xml.xul
+      scope: meta.preprocessor.filter.xml.xul
+      push:
+        - meta_scope: meta.preprocessor.xml.xul
+        - match: '\b(emptyLines|slashslash|spaces|substitution|attemptSubstitution)\b'
+          scope: support.constant.xul.xml
+        - match: '\n'
           pop: true
 
   comment:
@@ -427,14 +542,13 @@ contexts:
             showcaret|skipintoolbarset|smoothscroll|sortable|spellcheck|standalone|
             subpanel|tabs(?:crolling|intitlebar|pecific)|toggletoolbar|topmost|treelines|
             useoriginprincipal|visuallyselected|wrap
-          )\s*(=)\s*(")(?:(true|false)|([^"]*?))(")
+          )\s*(=)\s*(")(?:(true|false))(")
       captures:
         1: entity.other.attribute-name.localname.xml.xul
         2: punctuation.separator.key-value.xml.xul
         3: punctuation.definition.string.begin.xml.xul
         4: variable.language.xml.xul
-        5: invalid.illegal
-        6: punctuation.definition.string.end.xml.xul
+        5: punctuation.definition.string.end.xml.xul
 
   xul-enum-attributes:
     - match: '(?:\s+|^)(align)\s*(=)\s*(")(?:(start|center|end|baseline|stretch|left|right)|([^"]*?))(")'
@@ -442,7 +556,7 @@ contexts:
         1: entity.other.attribute-name.localname.xml.xul
         2: punctuation.separator.key-value.xml.xul
         3: punctuation.definition.string.begin.xml.xul
-        4: support.constant.xml.xul
+        4: support.type.enum.xml.xul
         5: invalid.illegal
         6: punctuation.definition.string.end.xml.xul
     - match: '(?:\s+|^)(orient)\s*(=)\s*(")(?:(horizontal|vertical))(")'
@@ -450,28 +564,28 @@ contexts:
         1: entity.other.attribute-name.localname.xml.xul
         2: punctuation.separator.key-value.xml.xul
         3: punctuation.definition.string.begin.xml.xul
-        4: support.constant.xml.xul
+        4: support.type.enum.xml.xul
         5: punctuation.definition.string.end.xml.xul
     - match: '(?:\s+|^)(dir)\s*(=)\s*(")(?:(left|right|top(?:left|right)?|bottom(?:start|end|left|right)?|rtl|ltr|reverse))(")'
       captures:
         1: entity.other.attribute-name.localname.xml.xul
         2: punctuation.separator.key-value.xml.xul
         3: punctuation.definition.string.begin.xml.xul
-        4: support.constant.xml.xul
+        4: support.type.enum.xml.xul
         5: punctuation.definition.string.end.xml.xul
     - match: '(?:\s+|^)(pack)\s*(=)\s*(")(?:(start|center|end))(")'
       captures:
         1: entity.other.attribute-name.localname.xml.xul
         2: punctuation.separator.key-value.xml.xul
         3: punctuation.definition.string.begin.xml.xul
-        4: support.constant.xml.xul
+        4: support.type.enum.xml.xul
         5: punctuation.definition.string.end.xml.xul
     - match: '(?:\s+|^)(crop)\s*(=)\s*(")(left|none|start|center|right|end)(")'
       captures:
         1: entity.other.attribute-name.localname.xml.xul
         2: punctuation.separator.key-value.xml.xul
         3: punctuation.definition.string.begin.xml.xul
-        4: support.constant.xml.xul
+        4: support.type.enum.xml.xul
         5: punctuation.definition.string.end.xml.xul
     - match: '(?:\s+|^)(sizemode)\s*(=)\s*(")(maximized|normal|fullscreen)(")'
       captures:
