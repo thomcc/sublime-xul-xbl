@@ -49,7 +49,7 @@ contexts:
     - include: entity-decl
 
   xbl-tags:
-    - match: '(?:^\s+)?(<)([gs]etter|body|(?:con|de)structor|handler)\b'
+    - match: '(?:^\s+)?(<)([gs]etter|(?:con|de)structor|handler)\b'
       captures:
         1: punctuation.definition.tag.begin.xml.xul
         2: entity.name.tag.localname.xml.xul
@@ -105,7 +105,7 @@ contexts:
         1: punctuation.definition.tag.begin.xml.xul
         2: entity.name.tag.localname.xml.xul
       push:
-        - match: '(/?>)'
+        - match: '(/>)'
           captures:
             1: punctuation.definition.tag.end.xml.xul
           pop: true
@@ -119,6 +119,18 @@ contexts:
             6: punctuation.definition.string.end.xml.xul
         - include: xbl-special-attributes
         - include: tag-stuff
+        - match: '>'
+          scope: punctuation.definition.tag.end.xml.xul
+          set:
+            - include: xbl-body
+            - include: xbl-tags
+            - match: (</)\s*(method)\s*(>)
+              captures:
+                1: punctuation.definition.tag.begin.xml.xul
+                2: entity.name.tag.localname.xml.xul
+                3: punctuation.definition.tag.end.xml.xul
+              pop: true
+
     - match: (<)\s*(parameter)\b
       captures:
         1: punctuation.definition.tag.begin.xml.xul
@@ -182,6 +194,28 @@ contexts:
                 1: punctuation.separator.xml.xul
         - include: tag-stuff
 
+  xbl-body:
+    - match: '(?:^\s+)?(<)(body)\b'
+      captures:
+        1: punctuation.definition.tag.begin.xml.xul
+        2: entity.name.tag.localname.xml.xul
+      push:
+        - match: (?:(</)(body)(>)(?:\s*\n)?|(/>))
+          captures:
+            1: punctuation.definition.tag.begin.xml.xul
+            2: entity.name.tag.xml.xul
+            3: punctuation.definition.tag.end.xml.xul
+            4: punctuation.definition.tag.end.xml.xul
+          pop: true
+        - include: xbl-special-attributes
+        - include: tag-stuff
+        - match: (>)
+          scope: punctuation.definition.tag.end.xml.xul
+          push: scope:source.js
+          with_prototype:
+            - match: (?=</(?:body))
+              pop: true
+            - include: js-extra-comments
   script-tag:
     - match: '(?:^\s+)?(<)(script)\b'
       captures:
@@ -203,6 +237,7 @@ contexts:
           with_prototype:
             - match: (?=</script>)
               pop: true
+            - include: js-extra-comments
 
   generic-tag:
     - match: '(</?){{qualified_name}}([^/>\s]*)'
